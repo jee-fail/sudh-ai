@@ -12,7 +12,7 @@ services:
       - key: LLM_API_KEYS
         sync: false
       - key: LLM_MODEL
-        value: openrouter/google/gemma-4-31b-it:free
+        value: openrouter/nvidia/nemotron-3.5-lightning:free
       - key: DATABASE_URL
         value: sqlite:////data/app.db
       - key: ALLOWED_ORIGINS

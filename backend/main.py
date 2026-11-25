@@ -436,6 +436,7 @@ def create_app(
             "status": "ok",
             "keys_configured": len(config.keys),
             "cache_enabled": True,
+            "model": config.model,
         }
 
     @app.post("/chat")
