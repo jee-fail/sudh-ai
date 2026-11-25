@@ -1,6 +1,6 @@
 # sudh.AI demo video script
 
-Target runtime: about 2 minutes 30 seconds. Record this against the deployed public URLs once deployment is complete.
+Target runtime: about 2 minutes 30 seconds. Record this against the live public URLs: https://jee-fail.github.io/sudh-ai/ (frontend) and https://sudh-ai-backend.onrender.com/health (backend).
 
 ## Talk track and screen actions
 
@@ -43,7 +43,7 @@ Target runtime: about 2 minutes 30 seconds. Record this against the deployed pub
 ## Recording checklist
 
 - Use the public frontend and backend URLs in the recording.
-- Ensure two valid provider keys are configured and `ENABLE_FAILURE_SIMULATION=true`.
+- Ensure at least two valid provider keys are configured and `ENABLE_FAILURE_SIMULATION=true`.
 - Use a new, unique prompt for each failover test so an earlier cache entry cannot affect the result.
 - Keep provider keys, environment settings, and account dashboards off screen.
 - Record your own narration. Do not include credentials in the video.

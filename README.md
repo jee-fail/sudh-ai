@@ -6,13 +6,13 @@ sudh.AI is a full-stack chat application built for the Lyftr AI assignment. It u
 
 ## Live URLs
 
-- Frontend: not deployed yet
-- Backend: not deployed yet
-- Public repository: not created yet
+- Frontend: https://jee-fail.github.io/sudh-ai/
+- Backend: https://sudh-ai-backend.onrender.com/health
+- Public repository: https://github.com/jee-fail/sudh-ai
 
-Live deployment needs two valid provider keys and your chosen hosting and repository accounts. Real keys must be entered as private environment variables, never committed to the repository.
+The live backend uses OpenRouter keys entered as private environment variables in Render, never committed to the repository. A free Render instance spins down with inactivity, so the first request after an idle period can take about 50 seconds, and chat history resets on restart.
 
-If the repository owner will deploy from their GitHub account, follow [DEPLOYMENT_HANDOFF.md](DEPLOYMENT_HANDOFF.md).
+For the full deployment configuration and verification record, see [DEPLOYMENT_HANDOFF.md](DEPLOYMENT_HANDOFF.md).
 
 ## Run locally: with Docker and without
 
@@ -32,7 +32,7 @@ make down
 
 SQLite is stored at `/data/app.db` in the named `chat-data` volume and survives container restarts. `make down` keeps the volume. Avoid `docker compose down -v` unless you intend to delete the saved chat history.
 
-For live inference, copy `.env.example` to `.env`, set `LLM_MODE=litellm`, and replace both `LLM_API_KEYS` placeholders with real keys from the same provider. Keep `.env` private. The default model is `gemini/gemini-2.0-flash`; change `LLM_MODEL` if your provider or account uses a different supported model.
+For live inference, copy `.env.example` to `.env`, set `LLM_MODE=litellm`, and replace both `LLM_API_KEYS` placeholders with real keys from the same provider (the deployed app uses OpenRouter keys). Keep `.env` private. The example model is `openrouter/nvidia/nemotron-3.5-lightning:free`; change `LLM_MODEL` if your provider or account uses a different supported model.
 
 ### Without Docker
 
@@ -98,7 +98,7 @@ curl -s http://localhost:8000/chat \
   -d '{"session_id":"cache-demo-two","message":"What is the capital of France?"}'
 ```
 
-To demonstrate a primary-key failure, use a new message and session. With two provider keys and `ENABLE_FAILURE_SIMULATION=true`, this returns a real answer from `key_2` and reports one fallback attempt:
+To demonstrate a primary-key failure, use a new message and session. With at least two provider keys and `ENABLE_FAILURE_SIMULATION=true`, this returns a real answer from `key_2` and reports one fallback attempt:
 
 ```sh
 curl -s http://localhost:8000/chat \

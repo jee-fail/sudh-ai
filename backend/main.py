@@ -49,7 +49,11 @@ class Config:
         if not keys and mode == "mock":
             keys = ("demo-key-1", "demo-key-2")
 
-        default_model = "demo/mock-chat" if mode == "mock" else "gemini/gemini-2.0-flash"
+        default_model = (
+            "demo/mock-chat"
+            if mode == "mock"
+            else "openrouter/nvidia/nemotron-3.5-lightning:free"
+        )
         default_prompt = os.getenv(
             "DEFAULT_SYSTEM_PROMPT",
             "You are a helpful assistant. Keep replies clear and concise.",

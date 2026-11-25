@@ -1,44 +1,50 @@
 # sudh.AI deployment handoff
 
-This guide is for the owner of the GitHub account that will hold and deploy the repository. The source ZIP has no `.git` history, `.venv`, `node_modules`, `.env`, database, or provider keys. The Git commits created from it will belong to the account that configures and pushes them. The app's author and developer byline remains Sudhanshu Kumar.
+The application is deployed and live. This guide records the actual configuration so it can be recreated or handed over. The app's author and developer byline remains Sudhanshu Kumar.
 
-## 1. Create the GitHub repository under the correct account
+## Live URLs
 
-Create an empty public repository named `sudh-ai` under the account or organization that should own it. Do not initialize it with a README or license, since those files are already in the ZIP.
+- Frontend (GitHub Pages): https://jee-fail.github.io/sudh-ai/
+- Backend health check (Render): https://sudh-ai-backend.onrender.com/health
+- Public repository: https://github.com/jee-fail/sudh-ai
 
-Extract `sudh-ai-submission.zip`. It contains a top-level `sudh-ai/` folder. From that folder, create the repository and commit using the repository owner's identity:
+No `.env` file, provider keys, database, or tokens are committed. `.gitignore` excludes `.env`, `.env.*`, `.venv`, `*.db`, `node_modules`, and `dist`.
+
+## 1. Repository
+
+The public repository `jee-fail/sudh-ai` uses `main` as its default branch. It was created from the submission ZIP and now contains the deployment configuration in addition to the original source.
+
+To clone it locally:
 
 ```sh
+git clone https://github.com/jee-fail/sudh-ai.git
 cd sudh-ai
-git init -b main
-git config user.name "Repository Owner Name"
-git config user.email "verified-email-or-github-noreply-address"
-git add .
-git commit -m "Add sudh.AI full-stack chat app"
-git remote add origin https://github.com/OWNER/sudh-ai.git
-git push -u origin main
 ```
 
-The `git config` commands above are local to this repository. Do not add `--global`. Use an email connected to the repository owner's GitHub account so GitHub attributes the commit to them. If the repository already exists, replace the `git remote add` URL with its URL and follow the owner's branch rules.
+The commit author identity is configured locally in this clone; anyone pushing should use an identity connected to their own GitHub account. Do not set `user.name` or `user.email` with `--global`.
 
-If using GitHub's web interface, extract the ZIP first, then upload the files inside `sudh-ai/`. Uploading the ZIP as a single file does not create the repository contents.
+## 2. Backend on Render
 
-For an organization repository, the owner may also need to authorize the Vercel and Render GitHub integrations for that repository.
+The backend is defined by `render.yaml` at the repository root and was created with the Render Blueprint deeplink:
 
-## 2. Deploy the backend on Render
+```
+https://dashboard.render.com/blueprint/new?repo=https://github.com/jee-fail/sudh-ai
+```
 
-1. In the repository owner's Render account, create a Web Service from the GitHub repository.
-2. Set the root directory to `backend`, choose the Docker runtime, and set the Dockerfile path to `Dockerfile` relative to that root.
-3. Set the health check path to `/health`.
-4. Attach a persistent disk mounted at `/data`. SQLite must use this disk to survive restarts. Confirm the current Render plan and disk price with the owner before creating a billable service.
-5. Add these environment variables in Render. Enter provider keys using Render's secret environment variable controls, not in GitHub:
+Configuration applied by the Blueprint:
+
+- Service: `sudh-ai-backend`, Docker runtime, root directory `backend`, Dockerfile path `Dockerfile`.
+- Health check path: `/health`.
+- Plan: **free**, with **no persistent disk**. SQLite writes to `/data/app.db` inside the container filesystem, so chat history resets when the service restarts or the instance spins down. A paid plan with a persistent disk would be required to keep history across restarts.
+- Render supplies the `PORT` value; the Docker image listens on it.
+- Environment variables (provider keys are entered in the Render dashboard only, as `sync: false` values):
 
 ```text
 LLM_MODE=litellm
-LLM_API_KEYS=<GEMINI_KEY_1>,<GEMINI_KEY_2>
+LLM_API_KEYS=<OPENROUTER_KEY_1>,<OPENROUTER_KEY_2>
 LLM_MODEL=openrouter/nvidia/nemotron-3.5-lightning:free
 DATABASE_URL=sqlite:////data/app.db
-ALLOWED_ORIGINS=http://localhost:3000
+ALLOWED_ORIGINS=https://jee-fail.github.io
 ENABLE_FAILURE_SIMULATION=true
 DEFAULT_SYSTEM_PROMPT=You are a helpful assistant. Keep replies clear and concise.
 LLM_TIMEOUT_SECONDS=30
@@ -49,28 +55,49 @@ CACHE_MAX_ENTRIES=256
 LOG_LEVEL=INFO
 ```
 
-Render supplies the service `PORT` value. The backend Docker image listens on that value. The `ALLOWED_ORIGINS` value above is temporary. Replace it after the Vercel deployment with the exact Vercel origin, such as `https://sudh-ai.vercel.app`.
-If the configured Gemini model is not available to the account, change `LLM_MODEL` to a currently supported LiteLLM Gemini model.
+Notes:
 
-Deploy the service and verify that `https://<render-service>.onrender.com/health` returns HTTP 200 with `keys_configured` equal to 2.
+- Keys must be raw OpenRouter keys (`sk-or-…`), comma-separated, with no quotes or `Bearer` prefix. The app requires at least two keys for the failover demo.
+- `ALLOWED_ORIGINS` is the exact GitHub Pages origin, with no trailing slash and no `/sudh-ai` path.
+- The original `gemini/gemini-2.0-flash` model was shut down on 2026-06-01. OpenRouter's free Nemotron model is used instead; change `LLM_MODEL` if you switch providers.
+- Free Render instances spin down with inactivity, so the first request after idle may be delayed by about 50 seconds.
 
-## 3. Deploy the frontend on Vercel
+Verify with:
 
-1. In the repository owner's Vercel account, import the same GitHub repository.
-2. Set the project root directory to `frontend` and select the Vite framework preset.
-3. Use `npm run build` as the build command and `dist` as the output directory.
-4. Add the environment variable `VITE_API_BASE_URL` with the Render service base URL, for example `https://<render-service>.onrender.com`.
-5. Deploy and note the Vercel site origin.
+```sh
+curl -s https://sudh-ai-backend.onrender.com/health
+```
 
-Return to the Render service and change `ALLOWED_ORIGINS` to the exact Vercel origin, with no trailing slash. Redeploy the backend so browser requests pass CORS checks.
+A healthy response is HTTP 200 with `status: ok`, `keys_configured` of at least 2, and the active `model`.
 
-## 4. Verify the live deployment
+## 3. Frontend on GitHub Pages
 
-- Open the Vercel URL and send a message. Confirm the reply displays the model, latency, input tokens, and output tokens.
-- Send the same first message in a fresh session. Confirm the second result reports `LLM_CACHE`.
-- Select `Fail key_1 with 429` in the app and send a unique message. Confirm the response uses `key_2` and reports one fallback attempt.
-- Select `Fail all keys with 429`. Confirm the UI shows a readable error and the failed message is not in session history.
-- Check the API directly at `/health` and use the history and failover commands in `README.md`.
-- Record the required 2 to 3 minute demo in your own voice, following `DEMO_SCRIPT.md`.
+GitHub Pages is enabled with **GitHub Actions** as its source. The workflow is `.github/workflows/deploy-pages.yml`.
 
-Never commit `.env` files, API keys, Render environment values, or GitHub tokens. The repository owner should keep deployment credentials in the hosting dashboards.
+- Build command: `npm ci && npm run build` from the `frontend/` directory, with Node 20.
+- Output published: `frontend/dist`.
+- `frontend/vite.config.js` sets `base: "./"` so asset URLs work at the `/sudh-ai/` project path.
+- Repository variable: `VITE_API_BASE_URL=https://sudh-ai-backend.onrender.com`. It is baked into the bundle at build time, so set it before building. The workflow skips when the variable is unset.
+- Site URL: https://jee-fail.github.io/sudh-ai/
+
+## 4. Deployment verification (completed)
+
+| Check | Result |
+| --- | --- |
+| `GET /health` | HTTP 200, `keys_configured: 4`, active model reported |
+| First message in a session | `LIVE_INFERENCE`, served by `key_1` |
+| Same message in a fresh session | `LLM_CACHE` |
+| `X-Simulate-Failure: key_1=429` | served by `key_2`, `fallback_attempts: 1` |
+| `X-Simulate-Failure: *=429` | HTTP 503, readable error, session not saved |
+| CORS header | `Access-Control-Allow-Origin: https://jee-fail.github.io` |
+| Pages assets | HTTP 200 for `./assets/*.js` and `*.css` |
+
+For the full walkthrough, see `README.md`; for the recorded demo, follow `DEMO_SCRIPT.md`.
+
+## 5. Updating the deployment
+
+- A push to `main` triggers the Pages workflow and a Render Blueprint auto-sync.
+- Keep provider keys in the Render dashboard and `VITE_API_BASE_URL` as a GitHub Actions variable. Never commit secrets.
+- If CORS errors appear in the browser, confirm `ALLOWED_ORIGINS` on Render matches the Pages origin exactly.
+
+Never commit `.env` files, API keys, Render environment values, or GitHub tokens. Deployment credentials stay in the hosting dashboards.
