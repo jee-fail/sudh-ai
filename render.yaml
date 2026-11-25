@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: sudh-ai-backend
+    runtime: docker
+    plan: 0.5c-512mb
+    rootDir: backend
+    dockerfilePath: Dockerfile
+    healthCheckPath: /health
+    disk:
+      name: sudh-ai-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: LLM_MODE
+        value: litellm
+      - key: LLM_API_KEYS
+        sync: false
+      - key: LLM_MODEL
+        value: gemini/gemini-2.0-flash
+      - key: DATABASE_URL
+        value: sqlite:////data/app.db
+      - key: ALLOWED_ORIGINS
+        value: https://jee-fail.github.io
+      - key: ENABLE_FAILURE_SIMULATION
+        value: "true"
+      - key: DEFAULT_SYSTEM_PROMPT
+        value: You are a helpful assistant. Keep replies clear and concise.
+      - key: LLM_TIMEOUT_SECONDS
+        value: "30"
+      - key: LLM_MAX_TOKENS
+        value: "512"
+      - key: LLM_TEMPERATURE
+        value: "0.2"
+      - key: CACHE_TTL_SECONDS
+        value: "3600"
+      - key: CACHE_MAX_ENTRIES
+        value: "256"
+      - key: LOG_LEVEL
+        value: INFO
