@@ -36,7 +36,7 @@ For an organization repository, the owner may also need to authorize the Vercel 
 ```text
 LLM_MODE=litellm
 LLM_API_KEYS=<GEMINI_KEY_1>,<GEMINI_KEY_2>
-LLM_MODEL=gemini/gemini-3.8-flash
+LLM_MODEL=openrouter/google/gemma-4-31b-it:free
 DATABASE_URL=sqlite:////data/app.db
 ALLOWED_ORIGINS=http://localhost:3000
 ENABLE_FAILURE_SIMULATION=true

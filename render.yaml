@@ -12,7 +12,7 @@ services:
       - key: LLM_API_KEYS
         sync: false
       - key: LLM_MODEL
-        value: gemini/gemini-3.8-flash
+        value: openrouter/google/gemma-4-31b-it:free
       - key: DATABASE_URL
         value: sqlite:////data/app.db
       - key: ALLOWED_ORIGINS
