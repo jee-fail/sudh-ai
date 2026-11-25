@@ -2,14 +2,10 @@ services:
   - type: web
     name: sudh-ai-backend
     runtime: docker
-    plan: 0.5c-512mb
+    plan: free
     rootDir: backend
     dockerfilePath: Dockerfile
     healthCheckPath: /health
-    disk:
-      name: sudh-ai-data
-      mountPath: /data
-      sizeGB: 1
     envVars:
       - key: LLM_MODE
         value: litellm
